@@ -5,7 +5,7 @@ description: A web server that performs transcoding via Handbrake
 # author: Matthew <sanmadjack@gmail.com>
 
 environment:
-  sdk: '>=2.0.0 <3.0.0'
+  sdk: '2.10.5'
 
 dependencies:
   args: any

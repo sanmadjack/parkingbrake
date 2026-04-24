@@ -1,22 +1,28 @@
-FROM archlinux:20200705
+FROM archlinux:latest
 
 ENV PATH="/usr/lib/dart/bin:${PATH}:/root/.pub-cache/bin"
 
-RUN pacman -Sy --noconfirm ffmpeg handbrake-cli dart
+RUN pacman -Sy --noconfirm wget ffmpeg handbrake-cli
 
-RUN pub global activate webdev
+WORKDIR /build
+
+RUN wget https://archive.org/download/archlinux_pkg_dart/dart-2.10.5-1-x86_64.pkg.tar.zst
+
+RUN pacman -U --noconfirm dart-2.10.5-1-x86_64.pkg.tar.zst
+
+RUN dart pub global activate webdev
 
 WORKDIR /build/gui
 
 COPY gui/pubspec.yaml /build/gui/pubspec.yaml
 
-RUN pub get
+RUN dart pub get
 
 WORKDIR /build/server
 
 COPY server/pubspec.yaml /build/server/pubspec.yaml
 
-RUN pub get
+RUN dart pub get
 
 WORKDIR /build/gui
 

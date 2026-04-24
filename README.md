@@ -30,6 +30,7 @@ Here is a sample of all of the available settings:
         "two_pass": true,
         "decomb": true,
         "detelecine": true,
+        "auto_anamorphic": true,
         "width": 0, 
         "height": 0,
         "audio_codecs": ["opus"],
@@ -49,7 +50,7 @@ Here is a sample of all of the available settings:
                 "chapter_split": 2
             },
             "title_04.mkv": {
-                "chapter_splits": [2,3,2]
+                "chapter_splits": [2,3,6]
             }   
         }
     }
@@ -64,6 +65,7 @@ Here is a sample of all of the available settings:
 |two_pass|Whether to use two-pass encoding|true|true<br>false|
 |decomb|Whether to use decomb|true|true<br>false|
 |detelecine|Whether to use detelecine|true|true<br>false|
+|auto_anamorphic|Whether to use auto-anamorphic|true|true<br>false|
 |height|The height for the outputted video. 0 does not resize the video.|0| Any integer|
 |width|The width for the outputted video. 0 does not resize the video.|0|Any integer|
 |max_height|Specifies the max height for a video, resizing it if the video is taller than the specified height|0|Any integer greater than zero
@@ -72,7 +74,7 @@ Here is a sample of all of the available settings:
 |audio_quality|The audio quality to use. The meaning of the number varies by encoder|8|Any integer|
 |chapter_start|The chapter to start converting from.|1|Any integer|
 |chapter_end|The chapter to stop converting at, 0 indicating last chapter|0|Any integer|
-|chapter_splits|Splits the file based on array of chapter counts. Ignored if file has no chapters or if chapter_split is used. Works with chapter_start and chapter_end.|[]|Any array of integers greater than 0|
+|chapter_splits|Splits the file based on array of chapter numbers. Ignored if file has no chapters or if chapter_split is used. Works with chapter_start and chapter_end.|[]|Any array of integers greater than 0 in ascending order, greater then cchapter_start, and less than chapter_end if it is greater than 0|
 |chapter_split|Splits the file(s) into separate output files every x chapters, 0 indicating not splitting. Trailing chapters less than the number of chapters specified are included in the last file, for example if a chapter_split of 3 is used with a file with 11 chapters, it will create 3 files with chapters 1-3, 4-6, and 7-11. Ignored if file has no chapters. Works with chapter_start and chapter_end.|0|Any integer greater than 0|
 |audio_languages|The audio languages to import. Specified as an array of strings.|all languages|Any three-letter audio language code|
 |detect_hd_audio_substream|MakeMKV usually exports super high-quality audio streams along with their backwards-compatibly sub-stream, resulting in MKV files with duplicate audio streams. Enabling this option attempts to detect these and remove the duplicates. This is not perfect, and can sometimes eat commentary tracks. |false|true<br>false|
@@ -86,8 +88,7 @@ The below flags are always used. If you would like one or more of them made opti
     --format av_mkv
     --markers
     --encoder-profile auto
-    --vfr
-    --auto-anamorphic
+    --vfr    
     --no-hqdn3d
     --no-nlmeans
     --no-unsharp

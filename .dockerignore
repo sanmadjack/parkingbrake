@@ -11,3 +11,11 @@
 # If you don't generate documentation locally you can remove this line.
 doc/api/
 .idea/
+
+.dockerignore
+Dockerfile
+build/
+.git/
+.github/
+.gitignore
+.packages

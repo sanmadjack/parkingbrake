@@ -14,6 +14,7 @@ class EncodingSettings {
   bool twoPass = true;
   bool decomb = true;
   bool detelecine = true;
+  bool autoAnamorphic = true;
 
   int width = 0, height = 0, quality = 24, audioQuality = 8;
 
@@ -59,6 +60,9 @@ class EncodingSettings {
         case "mixdown":
           mixdown = parseMixdown(data[key].toString());
           break;
+        case "auto_anamorphic":
+          autoAnamorphic = data[key].toString()=="true";
+          break;
       }
     }
   }
@@ -103,7 +107,6 @@ class EncodingSettings {
       mixdownString,
       '--aq',
       audioQuality.toString(),
-      '--auto-anamorphic',
       '--no-hqdn3d',
       '--no-nlmeans',
       '--no-unsharp',
@@ -111,6 +114,10 @@ class EncodingSettings {
       '--no-deblock',
 
     ]);
+
+    if (autoAnamorphic) {
+      output.add('--auto-anamorphic');
+    }
 
     if (decomb) {
       output.add('--decomb');
