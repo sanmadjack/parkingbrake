@@ -1,46 +1,60 @@
 import 'dart:convert';
-import 'dart:math' as math;
 
 class JobQueueEntry {
-  String id;
-  String path;
-  String name;
-  String status;
-  num progress;
-  Duration duration;
-  int size;
+  String id = "";
+  String path = "";
+  String name = "";
+  String status = "";
+  double progress = 0;
+  Duration? duration;
+  int size = 0;
 
-  Map rawData;
+  Map rawData = {};
 
   int get percent => (progress * 100).round();
 
-  JobQueueEntry.fromJson(Map data) {
-    this.id = data['id'];
-    this.path = data['path'];
-    this.name = data['name'];
-    this.status = data['status'];
-    this.progress = data["progress"];
-    num dur = data["duration"];
-    this.duration = new Duration(milliseconds: dur.toInt() * 1000);
-    this.size = data["size"];
-    this.rawData = data;
+  JobQueueEntry({
+    required this.id,
+    required this.path,
+    required this.name,
+    required this.status,
+    required this.progress,
+    required this.size,
+    required num dur,
+  }) {
+    rawData = {};
+    duration = Duration(milliseconds: dur.toInt() * 1000);
   }
 
-  final JsonEncoder _encoder = new JsonEncoder.withIndent('  ');
+  JobQueueEntry.fromJson(Map data) {
+    id = data['id'];
+    path = data['path'];
+    name = data['name'];
+    status = data['status'];
+    progress = data["progress"];
+    num dur = data["duration"];
+    duration = Duration(milliseconds: dur.toInt() * 1000);
+    size = data["size"];
+    rawData = data;
+  }
 
-  String toString() => _encoder.convert(this.rawData);
+  final JsonEncoder _encoder = JsonEncoder.withIndent('  ');
 
-  static const Map<String, int> _conversions = const <String, int>{
+  @override
+  String toString() =>
+      (rawData.isEmpty ? "No raw data" : _encoder.convert(rawData));
+
+  static const Map<String, int> _conversions = <String, int>{
     "GB": 1073741824,
     "MB": 1048576,
     "KB": 1024,
-    "B": 1
+    "B": 1,
   };
 
   String get sizeString {
     for (String key in _conversions.keys) {
-      if (this.size >= _conversions[key]) {
-        return "${(size / _conversions[key]).toStringAsFixed(2)}$key";
+      if (size >= _conversions[key]!) {
+        return "${(size / _conversions[key]!).toStringAsFixed(2)}$key";
       }
     }
     return "${size}B";

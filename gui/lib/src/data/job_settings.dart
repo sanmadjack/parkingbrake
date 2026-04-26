@@ -1,4 +1,4 @@
 class JobSettings {
-  String encoder;
-  bool flipSubtitles;
+  String encoder = "";
+  bool flipSubtitles = false;
 }

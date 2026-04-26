@@ -1,14 +1,11 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:convert';
 
 import 'package:shelf/shelf.dart';
 import 'package:args/args.dart';
 import 'package:shelf/shelf_io.dart' as io;
 import "package:json_rpc_2/json_rpc_2.dart" as json_rpc;
-import "package:stream_channel/stream_channel.dart";
-import "package:web_socket_channel/io.dart";
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:parkingbrake_server/server.dart';
 import 'package:logging/logging.dart';
@@ -16,12 +13,12 @@ import 'package:path/path.dart' as path;
 import 'package:shelf_static/shelf_static.dart';
 import 'package:parkingbrake_server/shared.dart';
 
-main(List<String> args) async {
+Future<void> main(List<String> args) async {
   Logger.root.level = Level.ALL;
 
   Logger.root.onRecord.listen(logToConsole);
 
-  var parser = new ArgParser()
+  var parser = ArgParser()
     ..addOption('port', abbr: 'p', defaultsTo: '8080')
     ..addOption('data-dir', abbr: 'd')
     ..addOption('web-dir', abbr: 'w', defaultsTo: 'web')
@@ -44,24 +41,24 @@ main(List<String> args) async {
   }
 
   String dataDir = result["data-dir"];
-  if ((dataDir ?? "").isEmpty) {
+  if (dataDir.isEmpty) {
     stdout.writeln('data-dir is required');
     exitCode = 64;
     return;
   }
 
   String inputDir = result["input-dir"];
-  if ((inputDir ?? "").isEmpty) {
+  if (inputDir.isEmpty) {
     stdout.writeln('input-dir is required');
     exitCode = 64;
     return;
-  }
+  } 
   if (path.isRelative(inputDir)) {
     inputDir = path.join(dataDir, inputDir);
   }
 
   String trashDir = result["trash-dir"];
-  if ((trashDir ?? "").isEmpty) {
+  if (trashDir.isEmpty) {
     stdout.writeln('trash-dir is required');
     exitCode = 64;
     return;
@@ -71,7 +68,7 @@ main(List<String> args) async {
   }
 
   String outputDir = result["output-dir"];
-  if ((outputDir ?? "").isEmpty) {
+  if (outputDir.isEmpty) {
     stdout.writeln('output-dir is required');
     exitCode = 64;
     return;
@@ -81,17 +78,17 @@ main(List<String> args) async {
   }
 
   String webDir = result["web-dir"];
-  if ((webDir ?? "").isEmpty) {
+  if (webDir.isEmpty) {
     stdout.writeln('web-dir is required');
     exitCode = 64;
     return;
   }
 
-  String url = 'ws://localhost:$port';
+  //String url = 'ws://localhost:$port';
   String ffprobe = result["ffprobe"];
   String handbrake = result["handbrake-cli"];
 
-  File globalSettingsFile = new File(path.join(dataDir,settingsFileName));
+  File globalSettingsFile = File(path.join(dataDir,settingsFileName));
   Map<String,dynamic> globalSettings = <String,dynamic>{};
   if(globalSettingsFile.existsSync()) {
     String text = globalSettingsFile.readAsStringSync();
@@ -99,17 +96,17 @@ main(List<String> args) async {
   }
 
   QueueService service =
-      new QueueService(inputDir, outputDir, trashDir, ffprobe, handbrake, globalSettings);
+      QueueService(inputDir, outputDir, trashDir, ffprobe, handbrake, globalSettings);
   await service.init();
 
-  var socketHandler = webSocketHandler((webSocket) async {
-    var server = new json_rpc.Server(webSocket.cast<String>());
+  var socketHandler = webSocketHandler((webSocket, subProtocol) {
+    var server = json_rpc.Server(webSocket.cast<String>());
 
     server.registerMethod("get_queue", () {
       try {
         return service.entries;
-      } catch (e, st) {
-        throw new json_rpc.RpcException(1, e.message);
+      } catch (e) {
+        throw json_rpc.RpcException(1, e.toString());
       }
     });
 
@@ -120,18 +117,18 @@ main(List<String> args) async {
     server.registerMethod("get_enums", () {
       try {
         return {"encoders": getEncoders()};
-      } catch (e, st) {
-        throw new json_rpc.RpcException(1, e.message);
+      } catch (e) {
+        throw json_rpc.RpcException(1, e.toString());
       }
     });
 
     server.registerMethod("set_encoding_settings", (params) {
       try {
-        String data = params.getString("data");
-        Map json = jsonDecode(data);
-        EncodingSettings encodingSettings = new EncodingSettings.fromJson(json);
-      } catch (e, st) {
-        throw new json_rpc.RpcException(1, e.message);
+        //String data = params.getString("data");
+        //Map json = jsonDecode(data);
+        //EncodingSettings encodingSettings = EncodingSettings.fromJson(json);
+      } catch (e) {
+        throw json_rpc.RpcException(1, e.toString());
       }
     });
 
@@ -142,14 +139,15 @@ main(List<String> args) async {
   var staticHandler =
       createStaticHandler(webDir, defaultDocument: "index.html");
 
-  var handler = (Request request) {
+  FutureOr<Response> handler(Request request) {
     if (request.headers.containsKey("sec-websocket-version")) {
       return socketHandler(request);
     } else {
       return staticHandler(request);
     }
-  };
+  }
 
   var shelfServer = await io.serve(handler, InternetAddress.anyIPv6, port);
   print('Serving at http://${shelfServer.address.host}:${shelfServer.port}');
+
 }

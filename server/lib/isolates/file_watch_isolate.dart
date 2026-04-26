@@ -23,9 +23,9 @@ class FileWatchIsolate {
   String watchPath;
 
   final ReceivePort _isolateReceivePort = new ReceivePort();
-  SendPort _isolateSendPort;
+  //SendPort? _isolateSendPort;
 
-  Isolate _isolate;
+  Isolate? _isolate;
 
   static final Map<String, DateTime> filesAlreadyFound = <String, DateTime>{};
 
@@ -37,7 +37,7 @@ class FileWatchIsolate {
         } else if (data is DeleteFileEvent) {
           _deleteFileStreamController.add(data);
         } else if (data is SendPort) {
-          _isolateSendPort = data;
+          //_isolateSendPort = data;
         }
       } catch (e, st) {
         _log.severe("_isolateReceivePort.listen", e, st);
@@ -66,7 +66,7 @@ class FileWatchIsolate {
       Logger.root.onRecord.listen(logToConsole);
 
       ReceivePort receivePort = new ReceivePort();
-      config.port.send(receivePort.sendPort);
+      config.port!.send(receivePort.sendPort);
 
       receivePort.listen((dynamic data) async {
         try {
@@ -79,7 +79,7 @@ class FileWatchIsolate {
         }
       });
 
-      Directory inputDirectory = new Directory(config.path);
+      Directory inputDirectory = Directory(config.path!);
       if (!(await inputDirectory.exists())) {
         await inputDirectory.create(recursive: true);
       }
@@ -89,7 +89,7 @@ class FileWatchIsolate {
 //          .listen((FileSystemEvent e) => _fileEventHandler(e, config.port));
 
       while (true) {
-        await _crawlFolders(inputDirectory, config.port);
+        await _crawlFolders(inputDirectory, config.port!);
 
         sleep(new Duration(seconds: 15));
       }
@@ -197,7 +197,7 @@ class FileWatchIsolate {
           _log.finest("New file found: ${fse.path}");
           NewFileEvent e;
           if (path.basename(fse.path).toLowerCase() == settingsFileName) {
-            e = new NewFileEvent(fse.path);
+            e = NewFileEvent(fse.path);
             e.type = "json";
             e.size = await fse.length();
           } else {
@@ -243,7 +243,7 @@ class FileWatchIsolate {
 
       output.type = format["format_long_name"];
       output.duration = num.parse(format["duration"]);
-      output.size = num.parse(format["size"]);
+      output.size = int.parse(format["size"]);
 
       output.chapters = data["chapters"].length;
 
@@ -280,18 +280,19 @@ class FileWatchIsolate {
 }
 
 class FileWatcherIsolateConfig {
-  SendPort port;
-  String path;
+  SendPort? port;
+  String? path;
 }
 
 class NewFileEvent {
-  String path, type;
-  num duration, size, chapters;
+  String path = "", type = "";
+  num duration = 0;
+  int size = 0, chapters = 0;
   List<StreamData> streams = <StreamData>[];
 
   NewFileEvent(this.path);
 }
 
 class DeleteFileEvent {
-  String path;
+  String? path;
 }

@@ -12,17 +12,17 @@ export 'enums/stream_types.dart';
 export 'data/encoder_job.dart';
 
 class QueueEntry {
-  static final Logger _log = new Logger('QueueEntry');
+  static final Logger _log = Logger('QueueEntry');
 
-  String id = new Uuid().v4();
-  String path;
-  String fullPath;
-  String dir;
-  String name;
-  String type;
-  num duration;
+  String id = Uuid().v4();
+  String path = "";
+  String fullPath = "";
+  String dir = "";
+  String name = "";
+  String type = "";
+  num? duration;
 
-  int chapters;
+  int chapters = 0;
 
   int maxHeight = -1;
 
@@ -33,9 +33,9 @@ class QueueEntry {
 
   List<String> audioLanguages = <String>[];
 
-  EncodingSettings _encoding = new EncodingSettings();
+  EncodingSettings _encoding = EncodingSettings();
 
-  num size;
+  num? size;
   List<StreamData> streams = <StreamData>[];
 
   List<StreamData> get audioStreams =>
@@ -49,21 +49,21 @@ class QueueEntry {
   List<EncoderJob> getEncoderJobs() {
     final List<EncoderJob> output = <EncoderJob>[];
 
-    if (this.chapters > 0) {
+    if (chapters > 0) {
       if (chapterSplit > 0) {
         int start = 1,
-            lastChapter = this.chapters;
-        if (this.chapterEnd > 0 && this.chapterEnd <= this.chapters) {
-          lastChapter = this.chapterEnd;
+            lastChapter = chapters;
+        if (chapterEnd > 0 && chapterEnd <= chapters) {
+          lastChapter = chapterEnd;
         }
 
-        if (this.chapterStart > 0) {
-          start = this.chapterStart;
+        if (chapterStart > 0) {
+          start = chapterStart;
         }
 
         while (start <= lastChapter) {
-          int end = start + this.chapterSplit - 1;
-          if (lastChapter < (end + this.chapterSplit - 1)) {
+          int end = start + chapterSplit - 1;
+          if (lastChapter < (end + chapterSplit - 1)) {
             end = lastChapter;
           }
 
@@ -147,8 +147,8 @@ class QueueEntry {
   }
 
   EncoderJob _prepareEncoderJob() {
-    EncoderJob output = new EncoderJob()
-      ..inputPath = this.fullPath
+    EncoderJob output = EncoderJob()
+      ..inputPath = fullPath
       ..args = _encoding.toProcessArgs();
 
     int count = streams
@@ -172,15 +172,15 @@ class QueueEntry {
       ]);
     }
 
-    if(this.audioLanguages.length==0) {
+    if(audioLanguages.isEmpty) {
       output.args.add('--all-audio');
     } else {
-      List<StreamData> allAudioStreams = this.audioStreams;
-      List<StreamData> remainingAudioStreams = this.audioStreams;
+      List<StreamData> allAudioStreams = audioStreams;
+      List<StreamData> remainingAudioStreams = audioStreams;
       List<int> selectedStreams = <int>[];
 
-      StreamData previousStream;
-      for (String lang in this.audioLanguages) {
+      StreamData? previousStream;
+      for (String lang in audioLanguages) {
         previousStream = null;
         for (StreamData sd in remainingAudioStreams
             .where(
@@ -212,21 +212,21 @@ class QueueEntry {
       output.args.add(selectedStreams.join(","));
     }
 
-    if(this.maxHeight!=-1) {
-      output.args.add("--maxHeight ${this.maxHeight}");
+    if(maxHeight!=-1) {
+      output.args.add("--maxHeight ${maxHeight}");
     }
     
     return output;
   }
 
   Map toJson() => {
-        'id': this.id,
-        'path': this.path,
-        'name': this.name,
+        'id': id,
+        'path': path,
+        'name': name,
         'status': status.toString().split(".")[1],
         'duration': duration,
         'size': size,
-        'chapters': this.chapters,
+        'chapters': chapters,
         'type': type,
         'streams': streams.map((StreamData sd) => sd.toJson()).toList(),
         'progress': progress,
@@ -234,7 +234,7 @@ class QueueEntry {
       };
 
   void resetSettings() {
-    this._encoding = new EncodingSettings();
+    _encoding = EncodingSettings();
     chapterSplit = 0;
     chapterStart = 0;
     chapterEnd = 0;
@@ -247,40 +247,40 @@ class QueueEntry {
     for (String key in data.keys) {
       switch (key) {
         case "chapter_start":
-          this.chapterStart = int.parse(data[key].toString());
+          chapterStart = int.parse(data[key].toString());
           break;
         case "chapter_end":
-          this.chapterEnd = int.parse(data[key].toString());
+          chapterEnd = int.parse(data[key].toString());
           break;
         case "chapter_split":
-          this.chapterSplit = int.parse(data[key].toString());
+          chapterSplit = int.parse(data[key].toString());
           break;
         case "chapter_splits":
           for(dynamic value in data[key]) {
-            this.chapterSplits.add(int.parse(value.toString()));
+            chapterSplits.add(int.parse(value.toString()));
           }
           break;
         case "subtitle_languages":
           //this = data[key]?.toString()?.toLowerCase() == "true";
           break;
         case "flip_subtitles":
-          this.flipSubtitles = data[key]?.toString()?.toLowerCase() == "true";
+          flipSubtitles = data[key]?.toString().toLowerCase() == "true";
           break;
         case "audio_languages":
-          this.audioLanguages.clear();
+          audioLanguages.clear();
           for(dynamic i in data[key]) {
-            this.audioLanguages.add(i.toString());
+            audioLanguages.add(i.toString());
           }
           break;
         case "detect_dts_duplicates":
         case "detect_hd_audio_substream":
           detectHdSubAudioTrack =
-              data[key]?.toString()?.toLowerCase() == "true";
+              data[key]?.toString().toLowerCase() == "true";
           break;
         case "files":
           break;
         case "max_height":
-          this.maxHeight = int.parse(data[key].toString());
+          maxHeight = int.parse(data[key].toString());
           break;
         default:
           _log.warning("Unknown setting: $key");
@@ -288,8 +288,8 @@ class QueueEntry {
     }
     _encoding.applySettings(data);
 
-    if (data.containsKey("files") && data["files"].containsKey(this.name)) {
-      applySettings(data["files"][this.name]);
+    if (data.containsKey("files") && data["files"].containsKey(name)) {
+      applySettings(data["files"][name]);
     }
   }
 

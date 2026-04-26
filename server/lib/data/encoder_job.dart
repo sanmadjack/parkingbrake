@@ -1,4 +1,4 @@
 class EncoderJob {
-  String inputPath;
+  String inputPath = "";
   List<String> args = <String>[];
 }

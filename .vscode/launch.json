@@ -1,0 +1,30 @@
+{
+    "configurations": [
+        {
+            "name": "GUI (lib/main.dart)",
+            "type": "dart",
+            "request": "launch",
+            "cwd": "gui",
+            "program": "lib/main.dart",
+            "args": [
+                "-d",
+                "chrome"
+            ]
+        },
+        {
+            "name": "Server (bin/server.dart)",
+            "type": "dart",
+            "request": "launch",
+            "cwd": "server",
+            "program": "bin/server.dart",
+            "args": [
+                "--data-dir",
+                "/home/matthew/Videos/transcoding/parkingbrake/",
+                "--web-dir",
+                "../gui/build/web",
+                "--handbrake-cli",
+                "HandBrakeCLI"
+            ]
+        }
+    ]
+}

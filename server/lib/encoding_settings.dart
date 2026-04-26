@@ -11,10 +11,11 @@ class EncodingSettings {
   AudioEncoders audioEncoder = AudioEncoders.opus;
   Mixdowns mixdown = Mixdowns.s7point1;
 
-  bool twoPass = true;
+  bool multiPass = true;
   bool decomb = true;
   bool detelecine = true;
   bool autoAnamorphic = true;
+  bool autoCrop = true;
 
   int width = 0, height = 0, quality = 24, audioQuality = 8;
 
@@ -36,14 +37,14 @@ class EncodingSettings {
         case "quality":
           quality = int.parse(data[key].toString());
           break;
-        case "two_pass":
-          twoPass = data[key].toString()=="true";
+        case "multi_pass":
+          multiPass = data[key].toString() == "true";
           break;
         case "decomb":
-          decomb = data[key].toString()=="true";
+          decomb = data[key].toString() == "true";
           break;
         case "detelecine":
-          detelecine = data[key].toString()=="true";
+          detelecine = data[key].toString() == "true";
           break;
         case "height":
           height = int.parse(data[key].toString());
@@ -61,7 +62,10 @@ class EncodingSettings {
           mixdown = parseMixdown(data[key].toString());
           break;
         case "auto_anamorphic":
-          autoAnamorphic = data[key].toString()=="true";
+          autoAnamorphic = data[key].toString() == "true";
+          break;
+        case "auto_crop":
+          autoCrop = data[key].toString() == "true";
           break;
       }
     }
@@ -80,7 +84,7 @@ class EncodingSettings {
     List<String> output = <String>[];
 
     String mixdownString = this.mixdown.toString().split(".")[1];
-    if(mixdownString.startsWith("s")) {
+    if (mixdownString.startsWith("s")) {
       // Enums can't start with a number, so I prefixed the surround mixes with s,
       // this strips that s out before sending it to handbrake
       mixdownString = mixdownString.substring(1);
@@ -112,8 +116,11 @@ class EncodingSettings {
       '--no-unsharp',
       '--no-lapsharp',
       '--no-deblock',
-
     ]);
+
+    if (!autoCrop) {
+      output.addAll(['--crop', '0:0:0:0']);
+    }
 
     if (autoAnamorphic) {
       output.add('--auto-anamorphic');
@@ -127,9 +134,8 @@ class EncodingSettings {
       output.add('--detelecine');
     }
 
-
-    if (twoPass) {
-      output.add('--two-pass');
+    if (multiPass) {
+      output.add('--multi-pass');
     }
 
     if (width > 0) {
@@ -144,5 +150,5 @@ class EncodingSettings {
 }
 
 class AudioTrackEncodingSettings {
-  Encoders encoder;
+  Encoders encoder = Encoders.x265;
 }

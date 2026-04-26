@@ -1,40 +1,39 @@
 FROM archlinux:latest
 
-ENV PATH="/usr/lib/dart/bin:${PATH}:/root/.pub-cache/bin"
 
-RUN pacman -Sy --noconfirm wget ffmpeg handbrake-cli
+RUN pacman -Sy --noconfirm ffmpeg handbrake-cli unzip git which curl wget
+ENV PATH="${PATH}:/build/flutter/bin"
 
 WORKDIR /build
-
-RUN wget https://archive.org/download/archlinux_pkg_dart/dart-2.10.5-1-x86_64.pkg.tar.zst
-
-RUN pacman -U --noconfirm dart-2.10.5-1-x86_64.pkg.tar.zst
-
-RUN dart pub global activate webdev
+RUN wget https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.41.7-stable.tar.xz
+RUN tar -xf flutter_linux_*.tar.xz -C /build
+RUN git config --global --add safe.directory /build/flutter
+RUN /build/flutter/bin/flutter config --enable-web
 
 WORKDIR /build/gui
 
 COPY gui/pubspec.yaml /build/gui/pubspec.yaml
 
-RUN dart pub get
+RUN /build/flutter/bin/dart pub get
 
 WORKDIR /build/server
 
 COPY server/pubspec.yaml /build/server/pubspec.yaml
 
-RUN dart pub get
+RUN /build/flutter/bin/dart pub get
 
 WORKDIR /build/gui
 
 COPY gui/ /build/gui
+RUN mkdir /app 
+RUN mkdir /app/web 
 
-RUN webdev build --release --output=web:/app/web/ && cd / && rm /build/gui -R
+RUN /build/flutter/bin/flutter build web --release --output=/app/web/ && cd / && rm /build/gui -R
 
 WORKDIR /build/server
 
 COPY server/ /build/server
-
-RUN dart2native bin/server.dart -o /app/server && cd / && rm /build -R
+RUN /build/flutter/bin/dart compile exe bin/server.dart -o /app/server && cd / && rm /build -R
 
 EXPOSE 8080
 

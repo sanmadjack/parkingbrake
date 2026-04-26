@@ -9,6 +9,6 @@ void logToConsole(LogRecord rec) {
     print(rec.error.toString());
   }
   if (rec.stackTrace != null) {
-    print(Trace.format(rec.stackTrace));
+    print(Trace.format(rec.stackTrace!));
   }
 }

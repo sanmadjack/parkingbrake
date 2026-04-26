@@ -2,12 +2,12 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 import 'queue_entry.dart';
+import 'package:collection/collection.dart';
 import 'package:path/path.dart' as path;
 import 'package:logging/logging.dart';
 import 'isolates/handbrake_isolate.dart';
 import 'isolates/file_watch_isolate.dart';
 import 'package:parkingbrake_server/shared.dart';
-import 'dart:isolate';
 
 class QueueService {
   static final Logger _log = new Logger('QueueService');
@@ -16,7 +16,7 @@ class QueueService {
   final String ffprobePath;
   final String handbrakePath;
 
-  Directory inputDir;
+  Directory? inputDir;
 
   Map<String,dynamic> globalSettings = <String,dynamic>{};
   final Map<String, Map> settings = <String, Map>{};
@@ -24,26 +24,26 @@ class QueueService {
 
   QueueService(this.inputPath, this.outputPath, this.trashPath,
       this.ffprobePath, this.handbrakePath, this.globalSettings) {
-    inputDir = new Directory(this.inputPath);
-    if (!inputDir.existsSync()) {
-      inputDir.createSync();
+    inputDir = Directory(inputPath);
+    if (!inputDir!.existsSync()) {
+      inputDir!.createSync();
       //throw new Exception("Input path does not exist: $inputPath");
     }
-    _handbrakeIsolate = new HandbrakeIsolate(_getNextHandbrakeJob);
+    _handbrakeIsolate = HandbrakeIsolate(_getNextHandbrakeJob);
 
-    _handbrakeIsolate.progress.listen((HandbrakeIsolateProgress progress) {
+    _handbrakeIsolate!.progress.listen((HandbrakeIsolateProgress progress) {
       try {
-        QueueEntry entry = getQueueEntry(progress.jobId);
+        QueueEntry? entry = getQueueEntry(progress.jobId);
         entry?.status = QueueEntryStatus.active;
         entry?.progress = progress.progress;
       } catch (e, st) {
         _log.severe("_handbrakeIsolate.progress.listen", e, st);
       }
     });
-    _handbrakeIsolate.complete.listen((HandbrakeIsolateComplete complete) {
+    _handbrakeIsolate!.complete.listen((HandbrakeIsolateComplete complete) {
       try {
-        QueueEntry entry = getQueueEntry(complete.jobId);
-        if ((complete.error ?? "").isEmpty) {
+        QueueEntry? entry = getQueueEntry(complete.jobId);
+        if (complete.error.isEmpty) {
           entry?.status = QueueEntryStatus.complete;
         } else {
           entry?.status = QueueEntryStatus.issue;
@@ -54,17 +54,17 @@ class QueueService {
       }
     });
 
-    _fileWatchIsolate = new FileWatchIsolate(inputPath);
-    _fileWatchIsolate.newFile.listen((NewFileEvent e) async {
+    _fileWatchIsolate = FileWatchIsolate(inputPath);
+    _fileWatchIsolate!.newFile.listen((NewFileEvent e) async {
       try {
         if (path.basename(e.path).toLowerCase() == settingsFileName) {
           await _applySettingsFile(e.path);
         } else {
           if (getQueueEntryForPath(e.path) != null) return;
 
-          final QueueEntry entry = new QueueEntry()
+          final QueueEntry entry = QueueEntry()
             ..fullPath = e.path
-            ..path = e.path.substring(this.inputPath.length + 1)
+            ..path = e.path.substring(inputPath.length + 1)
             ..dir = path.dirname(e.path)
             ..name = path.basename(e.path)
             ..streams = e.streams
@@ -75,7 +75,7 @@ class QueueService {
 
           entry.applySettings(globalSettings);
           if (settings.containsKey(entry.dir)) {
-            entry.applySettings(settings[entry.dir]);
+            entry.applySettings(settings[entry.dir]??<dynamic,dynamic>{});
           }
           entries.add(entry);
         }
@@ -83,12 +83,12 @@ class QueueService {
         _log.severe("_fileWatchIsolate.newFile.listen", e, st);
       }
     });
-    _fileWatchIsolate.deleteFile.listen((DeleteFileEvent e) {
+    _fileWatchIsolate!.deleteFile.listen((DeleteFileEvent e) {
       try {
-        if (path.basename(e.path).toLowerCase() == settingsFileName) {
-          _removeSettingsFile(e.path);
+        if (path.basename(e.path!).toLowerCase() == settingsFileName) {
+          _removeSettingsFile(e.path!);
         } else {
-          QueueEntry qe = getQueueEntryForPath(e.path);
+          QueueEntry? qe = getQueueEntryForPath(e.path!);
 
           if (qe == null || qe.status != QueueEntryStatus.complete) {
             entries.remove(qe);
@@ -117,16 +117,17 @@ class QueueService {
   }
 
   Future<void> _applySettingsFile(String filePath) async {
-    final File f = new File(filePath);
+    final File f = File(filePath);
     String dir = path.dirname(filePath);
     String contents = await f.readAsString();
     Map data;
     try {
       data = jsonDecode(contents);
     } catch (e, st) {
-      _log.warning("Unable to decode $filePath: ${e.message}", st);
+      _log.warning("Unable to decode $filePath: $e", st);
+      data = {};
     }
-    this.settings[dir] = data;
+    settings[dir] = data;
 
     for (QueueEntry qe in entries) {
       if (qe.status != QueueEntryStatus.pending) {
@@ -134,28 +135,28 @@ class QueueService {
       }
       if (qe.dir == dir) {
         qe.resetSettings();
-        qe.applySettings(this.globalSettings);
+        qe.applySettings(globalSettings);
         qe.applySettings(data);
       }
     }
   }
 
-  QueueEntry getQueueEntry(String id) => this
-      .entries
-      .firstWhere((QueueEntry qe) => qe.id == id, orElse: () => null);
-  QueueEntry getQueueEntryForPath(String path) => this
-      .entries
-      .firstWhere((QueueEntry qe) => qe.fullPath == path, orElse: () => null);
+  QueueEntry? getQueueEntry(String id) => 
+      entries
+      .firstWhereOrNull((QueueEntry qe) => qe.id == id);
+  QueueEntry? getQueueEntryForPath(String path) =>
+      entries
+      .firstWhereOrNull((QueueEntry qe) => qe.fullPath == path);
 
   void clearComplete() => entries.removeWhere(
       (QueueEntry entry) => entry.status == QueueEntryStatus.complete);
 
-  QueueEntry getNextQueueEntry() {
+  QueueEntry? getNextQueueEntry() {
     for (int i = 0; i < entries.length; i++) {
       QueueEntry entry = entries[i];
       if (entry.status == QueueEntryStatus.active ||
           entry.status == QueueEntryStatus.pending) {
-        File f = new File(entry.fullPath);
+        File f = File(entry.fullPath);
         if (!f.existsSync()) {
           entries.removeAt(i);
           i--;
@@ -169,19 +170,19 @@ class QueueService {
 
   bool shutdown = false;
 
-  HandbrakeIsolate _handbrakeIsolate;
-  FileWatchIsolate _fileWatchIsolate;
+  HandbrakeIsolate? _handbrakeIsolate;
+  FileWatchIsolate? _fileWatchIsolate;
 
-  HandbrakeIsolateConfig _getNextHandbrakeJob() {
-    QueueEntry nextEntry = getNextQueueEntry();
+  HandbrakeIsolateConfig? _getNextHandbrakeJob() {
+    QueueEntry? nextEntry = getNextQueueEntry();
     if (nextEntry == null) return null;
 
-    return new HandbrakeIsolateConfig(inputPath, outputPath, trashPath,
+    return HandbrakeIsolateConfig(inputPath, outputPath, trashPath,
         ffprobePath, handbrakePath, nextEntry);
   }
 
   Future<void> init() async {
-    _handbrakeIsolate.start();
-    _fileWatchIsolate.start();
+    _handbrakeIsolate!.start();
+    _fileWatchIsolate!.start();
   }
 }

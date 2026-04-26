@@ -62,10 +62,11 @@ Here is a sample of all of the available settings:
 |encoder|The encoder to use|x264|x264<br>x264_10bit<br>x265<br>x265_10bit<br>x265_12bit<br>mpeg4<br>mpeg2<br>VP8<br>VP9<br>theora|
 |preset|The preset to use, options vary by encoder|medium|ultrafast<br>superfast<br>veryfast<br>faster<br>fast<br>medium<br>slow<br>slower<br>veryslow<br>placebo|
 |quality|The quality setting to use|24|Any integer|
-|two_pass|Whether to use two-pass encoding|true|true<br>false|
+|multi_pass|Whether to use multi-pass encoding|true|true<br>false|
 |decomb|Whether to use decomb|true|true<br>false|
 |detelecine|Whether to use detelecine|true|true<br>false|
 |auto_anamorphic|Whether to use auto-anamorphic|true|true<br>false|
+|auto_crop|Whether to use auto crop black bars|true|true<br>false|
 |height|The height for the outputted video. 0 does not resize the video.|0| Any integer|
 |width|The width for the outputted video. 0 does not resize the video.|0|Any integer|
 |max_height|Specifies the max height for a video, resizing it if the video is taller than the specified height|0|Any integer greater than zero

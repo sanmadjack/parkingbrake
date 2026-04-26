@@ -1,13 +1,12 @@
 import 'dart:async';
 import "package:json_rpc_2/json_rpc_2.dart" as json_rpc;
-import "package:stream_channel/stream_channel.dart";
 import "package:web_socket_channel/html.dart";
 import 'data/job_queue_entry.dart';
-import 'dart:html';
+import 'package:web/web.dart';
 import 'package:logging/logging.dart';
 
 class RpcService {
-  final Logger log = new Logger('RpcService');
+  final Logger log = Logger('RpcService');
 
   Future<dynamic> clientWrapper(Function work) async {
     String protocol = "ws";
@@ -19,12 +18,12 @@ class RpcService {
     log.finer("Websocket URL: $url");
     // When running in dev, since I use PHPStorm, the client runs via a different
     // server than the dartalog server component. This is usually on a 5-digit port,
-    // which theoretically wouldn't be used ina  real deployment.
+    // which theoretically wouldn't be used in a real deployment.
     // TODO: Figure out a cleaner way of handling this
     if (window.location.port.length >= 5) url = "ws://localhost:8080";
 
-    final HtmlWebSocketChannel _socket = new HtmlWebSocketChannel.connect(url);
-    final client = new json_rpc.Client(_socket.cast<String>());
+    final HtmlWebSocketChannel socket = HtmlWebSocketChannel.connect(url);
+    final client = json_rpc.Client(socket.cast<String>());
     client.listen();
     try {
       return await work(client);
@@ -33,10 +32,8 @@ class RpcService {
     }
   }
 
-  JobQueueService() {}
-
   Future<List<JobQueueEntry>> getJobQueue() async {
-    log.finest("JobQueueService.getJobQueue");
+    log.finest("RpcService.getJobQueue");
 
     List result =
         await clientWrapper((client) => client.sendRequest("get_queue"));
@@ -45,7 +42,7 @@ class RpcService {
 
     List<JobQueueEntry> output = <JobQueueEntry>[];
     for (Map entry in result) {
-      output.add(new JobQueueEntry.fromJson(entry));
+      output.add(JobQueueEntry.fromJson(entry));
     }
 
     return output;
@@ -56,7 +53,7 @@ class RpcService {
   }
 
   Future<Map> getEnums() async {
-    log.finest("getJobQueue");
+    log.finest("RpcService.getEnums");
 
     Map result =
         await clientWrapper((client) => client.sendRequest("get_enums"));
