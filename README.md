@@ -57,9 +57,12 @@ Here is a sample of all of the available settings:
     
 ### Encoding settings:
 
+Many of these are based on the CLi options for HandBrake, check them here: https://handbrake.fr/docs/en/latest/cli/command-line-reference.html
+
 |Name|Description|Default|Options|
 |---|---|---|---|
-|encoder|The encoder to use|x264|x264<br>x264_10bit<br>x265<br>x265_10bit<br>x265_12bit<br>mpeg4<br>mpeg2<br>VP8<br>VP9<br>theora|
+|encoder|The encoder to use|x264|
+svt_av1<br>svt_av1_10bit<br>ffv1<br>x264<br>x264_10bit<br>vce_h264<br>nvenc_h264<br>x265<br>x265_10bit<br>x265_12bit<br>vce_h265<br>vce_h265_10bit<br>nvenc_h265<br>nvenc_h265_10bit<br>mpeg4<br>mpeg2<br>VP8<br>VP9<br>VP9_10bit<br>theora|
 |preset|The preset to use, options vary by encoder|medium|ultrafast<br>superfast<br>veryfast<br>faster<br>fast<br>medium<br>slow<br>slower<br>veryslow<br>placebo|
 |quality|The quality setting to use|24|Any integer|
 |multi_pass|Whether to use multi-pass encoding|true|true<br>false|

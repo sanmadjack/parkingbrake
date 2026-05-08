@@ -1,6 +1,6 @@
 name: parkingbrake_server
 description: A web server that performs transcoding via Handbrake
-# version: 0.2.0-beta
+version: 0.3.2
 # homepage: https://github.com/sanmadjack/parkingbrake
 # author: Matthew <sanmadjack@gmail.com>
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
