@@ -4,7 +4,6 @@ RUN apt update && apt install -y ffmpeg handbrake-cli && apt clean
 
 WORKDIR /app/
 COPY ./output/ /app/
-RUN ls -laR /app
 
 EXPOSE 8080
 

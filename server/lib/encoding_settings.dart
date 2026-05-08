@@ -2,11 +2,10 @@ import 'package:parkingbrake_server/enums/audio_encoders.dart';
 import 'package:parkingbrake_server/enums/mixdowns.dart';
 
 import 'enums/encoders.dart';
-import 'enums/encoder_preset.dart';
 
 class EncodingSettings {
   Encoders encoder = Encoders.x264;
-  EncoderPreset preset = EncoderPreset.medium;
+  String preset = "medium";
 
   AudioEncoders audioEncoder = AudioEncoders.opus;
   Mixdowns mixdown = Mixdowns.s7point1;
@@ -32,7 +31,7 @@ class EncodingSettings {
           encoder = parseEncoder(data[key]);
           break;
         case "preset":
-          preset = parseEncoderPreset(data[key]);
+          preset = data[key];
           break;
         case "quality":
           quality = int.parse(data[key].toString());
@@ -53,7 +52,7 @@ class EncodingSettings {
           width = int.parse(data[key].toString());
           break;
         case "audio_encoder":
-          this.audioEncoder = parseAudioEncoder(data[key].toString());
+          audioEncoder = parseAudioEncoder(data[key].toString());
           break;
         case "audio_quality":
           audioQuality = int.parse(data[key].toString());
@@ -78,12 +77,13 @@ class EncodingSettings {
     return output;
   }
 
+  @override
   String toString() => toProcessArgs().join(" ");
 
   List<String> toProcessArgs() {
     List<String> output = <String>[];
 
-    String mixdownString = this.mixdown.toString().split(".")[1];
+    String mixdownString = mixdown.toString().split(".")[1];
     if (mixdownString.startsWith("s")) {
       // Enums can't start with a number, so I prefixed the surround mixes with s,
       // this strips that s out before sending it to handbrake
@@ -97,16 +97,16 @@ class EncodingSettings {
       'av_mkv',
       '--markers',
       '--encoder',
-      this.encoder.toString().split(".")[1],
+      encoder.toString().split(".")[1],
       '--encoder-preset',
-      this.preset.toString().split(".")[1],
+      preset,
       '--encoder-profile',
       'auto',
       '--quality',
       quality.toString(),
       '--vfr',
       '--aencoder',
-      this.audioEncoder.toString().split(".")[1],
+      audioEncoder.toString().split(".")[1],
       '--mixdown',
       mixdownString,
       '--aq',
